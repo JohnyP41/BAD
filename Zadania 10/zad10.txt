@@ -1,0 +1,75 @@
+---10.3
+CREATE PROCEDURE Podwyzka
+		@proc TINYINT = 10,
+		@kwota MONEY OUTPUT
+AS
+BEGIN
+		SELECT @kwota = SUM(placa * @proc/100)
+		FROM Pracownicy
+		WHERE placa < 2000
+
+		UPDATE Pracownicy
+		SET placa = placa * (1 + @proc/100.0)
+		WHERE placa < 2000
+END;
+--10.2
+create procedure Wstaw_pracownika(
+	@nazwisko varchar(50),
+	@stanowisko varchar(50) = 'doktorant', 
+	@szef varchar(50),
+	@placa int,
+	@zatrudniony datetime = null)
+as
+	declare @szef_id int
+	declare @pracownik_id int
+
+	if not exists(select nazwisko from pracownicy where nazwisko=@szef)
+		begin
+			raiserror (N' bledne nazwisko szefa: %s',16,1)
+		end
+	if not exists(select nazwa from Stanowiska where nazwa=@stanowisko)
+		begin
+			raiserror (N' bledny numer oddzialu: %d',16,1)
+		end
+	set @szef_id = (select id from Pracownicy where nazwisko = @szef)
+	set @pracownik_id = (select ISNULL(max(id),0)+10 from Pracownicy)
+	
+	if @zatrudniony = null
+		set @zatrudniony = GETDATE()
+insert into Pracownicy(id, nazwisko, szef, placa, stanowisko, zatrudniony)
+	values(@pracownik_id, @nazwisko, @szef_id, @placa, @stanowisko, @zatrudniony)
+go
+
+--10.1---------
+DECLARE @Zdanie varchar(1000) = 'Ala ma kota   i psa'
+DECLARE @Separator char(1) = ' '
+
+DECLARE @idx int = LEN(@Zdanie)
+DECLARE @wyraz varchar(1000) 
+declare @i int = 1
+DECLARE  @TabelaWyrazow TABLE 
+(
+        wyraz varchar(1000)
+) 
+while (2>1)
+	begin
+		if (CHARINDEX(@Separator, @Zdanie) != 0 and CHARINDEX(@Separator, @Zdanie) != 1)
+			begin
+				insert into @TabelaWyrazow
+					select left(@zdanie, CHARINDEX(@Separator, @Zdanie));
+					set @Zdanie = RIGHT(@Zdanie, @idx - CHARINDEX(@Separator, @Zdanie));
+					set @idx = LEN(@Zdanie);
+					set @i = @i + 1;
+			end;
+			else if(CHARINDEX(@Separator, @Zdanie) = 1)
+				begin
+					set @Zdanie = RIGHT(@Zdanie, @idx - CHARINDEX(@Separator, @Zdanie));
+					set @idx = LEN(@Zdanie);
+					set @i = @i + 1;
+				end
+			else if (CHARINDEX(@Separator, @Zdanie) = 0)
+				break;
+	end
+	insert into @TabelaWyrazow
+		select @zdanie;
+SELECT * FROM @TabelaWyrazow

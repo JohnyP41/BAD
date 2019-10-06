@@ -1,0 +1,22 @@
+1)Brudny odczyt
+2)Zapis w transakcje
+3)Fantom
+
+BEGIN TRAN T1
+UPDATE Wycieczki
+SET cena=cena 
+WHERE cel='Ateny';
+
+UPDATE Bilety
+SET cena=cena 
+WHERE cel='Ateny';
+
+BEGIN TRAN T2
+UPDATE Bilety
+SET cena=cena 
+WHERE cel='Ateny';
+
+UPDATE Wycieczki
+SET cena=cena 
+WHERE cel='Ateny';
+

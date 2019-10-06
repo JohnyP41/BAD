@@ -1,0 +1,75 @@
+CREATE FUNCTION DzielZdanie
+(
+    @Zdanie VARCHAR(1000),
+	@Separator CHAR(1)
+)
+    RETURNS @TabelaWyrazow TABLE
+	(
+        kursy VARCHAR(1000)
+	) 
+AS
+BEGIN
+DECLARE @wyraz VARCHAR(1000);
+DECLARE @i INT= 1;
+DECLARE @len INT = LEN(@zdanie);
+WHILE(1>0)
+BEGIN
+        IF(CHARINDEX(@separator, @zdanie) != 0 AND CHARINDEX(@separator, @zdanie) != 1)
+                BEGIN
+                        INSERT INTO @TabelaWyrazow
+                        SELECT LEFT(@zdanie, CHARINDEX(@separator, @zdanie));
+                        SET @zdanie = RIGHT(@zdanie, @len - CHARINDEX(@separator, @zdanie));
+                        SET @len = LEN(@zdanie);
+                        SET @i = @i + 1;
+                END
+        ELSE IF(CHARINDEX(@separator, @zdanie) = 1)
+                BEGIN
+                        SET @zdanie = RIGHT(@zdanie, @len - CHARINDEX(@separator, @zdanie));
+                        SET @len = LEN(@zdanie);
+                        SET @i = @i + 1;
+                END
+        ELSE IF(CHARINDEX(@separator, @zdanie) = 0)
+                BREAK;
+END
+INSERT INTO @TabelaWyrazow
+SELECT @zdanie;
+	RETURN;
+END;
+
+drop function DzielZdanie
+
+
+SELECT *
+FROM Szkolenia_Nieznormalizowane AS P
+CROSS APPLY DzielZdanie(P.kursy,',')
+
+-----------------------
+CREATE FUNCTION DzielZdanie
+( 
+	@Zdanie VARCHAR(1000),
+    @Separator CHAR(1)
+)
+	RETURNS @TabelaWyrazow TABLE 
+(
+	wyraz VARCHAR(1000) 
+)
+AS  
+BEGIN
+    DECLARE @idx INT
+    DECLARE @wyraz VARCHAR(1000)  
+    SET @idx = 1 
+    IF LEN( @Zdanie )<1 OR @Zdanie IS NULL RETURN  
+	WHILE @idx != 0 	
+	BEGIN 
+		SET @idx = CHARINDEX(@Separator, @Zdanie) 
+		IF @idx!=0     SET @wyraz = LEFT(@Zdanie,@idx - 1)
+		ELSE       SET @wyraz = @Zdanie  
+		IF(LEN(@wyraz)>0)  INSERT INTO @TabelaWyrazow(wyraz) VALUES(@wyraz)  
+		SET @Zdanie = RIGHT(@Zdanie,LEN(@Zdanie) - @idx)                 
+		IF LEN(@Zdanie) = 0 BREAK  
+	END
+	RETURN
+END
+
+SELECT DISTINCT PESEL_uczestnika,wyraz AS 'kursy'
+FROM Szkolenia_Nieznormalizowane CROSS APPLY dbo.DzielZdanie(kursy , ',');
